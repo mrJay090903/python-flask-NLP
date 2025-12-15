@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Data App{% endblock %}
+
+{% block content %}
+    <h1>Welcome</h1>
+
+    <p>Upload a CSV file with columns <code>category, subcategory, value, recorded_at</code> to import records.</p>
+
+    <form id="upload-form" method="post" action="/upload" enctype="multipart/form-data">
+        <div class="mb-3">
+            <input class="form-control" type="file" name="file">
+        </div>
+
+        <button class="btn btn-primary" type="submit">Upload</button>
+    </form>
+
+    <hr>
+
+    <a class="btn btn-success" href="/export/excel">Export Excel Report</a>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Charts - Data App{% endblock %}
+
+{% block content %}
+<h1>Interactive Charts</h1>
+
+<h2>Static Chart (Matplotlib PNG)</h2>
+<img src="/static_timeseries.png" class="img-fluid" />
+
+<hr>
+
+<h2>Interactive Chart (Plotly)</h2>
+<div id="timeseries-plot"></div>
+
+<script>
+    fetch('/api/plotly_timeseries')
+        .then(r => r.json())
+        .then(g => {
+            const fig = JSON.parse(JSON.stringify(g));
+            Plotly.react('timeseries-plot', fig.data, fig.layout || {});
+        })
+        .catch(e => console.error(e));
+</script>
+
+{% endblock %}
