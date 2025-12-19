@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Navigation Items{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>🧭 Navigation Items</h1>
+    <a href="{{ url_for('admin.new_nav') }}" class="btn btn-primary">+ New Item</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>URL</th>
+                    <th>Icon</th>
+                    <th>Position</th>
+                    <th>Roles</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nav in nav_items %}
+                <tr>
+                    <td><strong>{{ nav.title }}</strong></td>
+                    <td><code>{{ nav.endpoint }}</code></td>
+                    <td>-</td>
+                    <td>{{ nav.position }}</td>
+                    <td>
+                        {% for role in (nav.roles_allowed or '').split(',') if role %}
+                            <span class="badge bg-secondary">{{ role.strip() }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if nav.visible %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_nav', nav_id=nav.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <form method="POST" action="{{ url_for('admin.delete_nav', nav_id=nav.id) }}" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete nav item?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No navigation items configured</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <strong>💡 Tip:</strong> Navigation items are filtered by user role in the main navigation. Use comma-separated role names (e.g., "Admin,President") for roles_allowed.
+</div>
+{% endblock %}

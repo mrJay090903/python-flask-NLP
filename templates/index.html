@@ -1,21 +1,197 @@
 {% extends 'base.html' %}
 
-{% block title %}Home - Data App{% endblock %}
+{% block title %}Home - Data Analytics Dashboard{% endblock %}
 
 {% block content %}
-    <h1>Welcome</h1>
+<div class="mb-5">
+    <h1>📊 Data Analytics Dashboard</h1>
+    <p class="text-muted">Upload, manage, and analyze your data with interactive visualizations</p>
+</div>
 
-    <p>Upload a CSV file with columns <code>category, subcategory, value, recorded_at</code> to import records.</p>
+<!-- Statistics Section -->
+{% if stats %}
+<div class="grid mb-5">
+    <div class="stat-card">
+        <div class="stat-label">Total Records</div>
+        <div class="stat-value">{{ stats.total_records|default(0) }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total Value</div>
+        <div class="stat-value">${{ "%.2f"|format(stats.total_value|default(0)) }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Average Value</div>
+        <div class="stat-value">${{ "%.2f"|format(stats.average_value|default(0)) }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Categories</div>
+        <div class="stat-value">{{ stats.categories_count|default(0) }}</div>
+    </div>
+</div>
+{% endif %}
 
-    <form id="upload-form" method="post" action="/upload" enctype="multipart/form-data">
-        <div class="mb-3">
-            <input class="form-control" type="file" name="file">
+<!-- Upload Section -->
+<div class="card mb-5">
+    <div class="card-header">
+        <h3 class="mb-0">📁 Upload CSV Data</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            Upload a CSV file with columns: <code>category</code>, <code>value</code>, <code>recorded_at</code>
+            (optional: <code>subcategory</code>)
+        </p>
+        
+        <form id="upload-form" enctype="multipart/form-data">
+            <div class="upload-zone" id="upload-zone">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📤</div>
+                <p class="mb-2"><strong>Drag and drop your CSV file here</strong></p>
+                <p class="text-muted mb-3">or click to select</p>
+                <input type="file" id="file-input" name="file" accept=".csv" style="display: none;">
+            </div>
+            
+            <div id="file-name" class="mt-2 text-muted"></div>
+            
+            <div class="mt-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="upload-btn">Upload File</button>
+                <button type="reset" class="btn btn-secondary">Clear</button>
+            </div>
+        </form>
+        
+        <div id="upload-alert" style="display: none;"></div>
+    </div>
+</div>
+
+<!-- Export Section -->
+<div class="card mb-5">
+    <div class="card-header">
+        <h3 class="mb-0">📥 Export Data</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Export your data in various formats for further analysis</p>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="/export/excel" class="btn btn-success">
+                📊 Download Excel Report
+            </a>
+            <a href="/export/csv" class="btn btn-primary">
+                📄 Download CSV
+            </a>
+            <a href="/charts" class="btn btn-secondary">
+                📈 View Charts
+            </a>
         </div>
+    </div>
+</div>
 
-        <button class="btn btn-primary" type="submit">Upload</button>
-    </form>
+<!-- Quick Stats -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="mb-0">📋 Quick Summary</h3>
+    </div>
+    <div class="card-body">
+        {% if stats and stats.date_range %}
+            <ul class="list-unstyled">
+                <li class="mb-2"><strong>Date Range:</strong> 
+                    <span class="text-muted">
+                        {% if stats.date_range.start %}
+                            {{ stats.date_range.start[:10] }} to {{ stats.date_range.end[:10] }}
+                        {% else %}
+                            No data yet
+                        {% endif %}
+                    </span>
+                </li>
+                <li class="mb-2"><strong>Data Status:</strong> 
+                    {% if stats.total_records > 0 %}
+                        <span class="badge bg-success">✓ Data Available</span>
+                    {% else %}
+                        <span class="badge bg-warning">⚠ No Data</span>
+                    {% endif %}
+                </li>
+            </ul>
+        {% else %}
+            <p class="text-muted">No data available yet. Start by uploading a CSV file.</p>
+        {% endif %}
+    </div>
+</div>
 
-    <hr>
+<script>
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    const uploadForm = document.getElementById('upload-form');
+    const uploadAlert = document.getElementById('upload-alert');
 
-    <a class="btn btn-success" href="/export/excel">Export Excel Report</a>
+    // Click to upload
+    uploadZone.addEventListener('click', () => fileInput.click());
+
+    // File selected
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            fileName.textContent = '✓ Selected: ' + fileInput.files[0].name;
+        }
+    });
+
+    // Drag and drop
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('drag-over');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            fileName.textContent = '✓ Selected: ' + fileInput.files[0].name;
+        }
+    });
+
+    // Form submission
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (fileInput.files.length === 0) {
+            showAlert('Please select a file', 'warning');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            document.getElementById('upload-btn').disabled = true;
+            document.getElementById('upload-btn').textContent = 'Uploading...';
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showAlert(`✓ Successfully uploaded ${result.rows} records!`, 'success');
+                uploadForm.reset();
+                fileName.textContent = '';
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('Error: ' + (result.error || 'Upload failed'), 'danger');
+            }
+        } catch (error) {
+            showAlert('Error: ' + error.message, 'danger');
+        } finally {
+            document.getElementById('upload-btn').disabled = false;
+            document.getElementById('upload-btn').textContent = 'Upload File';
+        }
+    });
+
+    function showAlert(message, type) {
+        uploadAlert.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        uploadAlert.style.display = 'block';
+    }
+</script>
 {% endblock %}

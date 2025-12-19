@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-md">
+    <h1>{{ title }}</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group mb-3">
+                    {{ form.username.label }}
+                    {% if form.username.errors %}
+                        {{ form.username(class="form-control is-invalid") }}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.username.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.username(class="form-control") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group mb-3">
+                    {{ form.email.label }}
+                    {% if form.email.errors %}
+                        {{ form.email(class="form-control is-invalid", type="email") }}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.email(class="form-control", type="email") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group mb-3">
+                    {{ form.role.label }}
+                    {{ form.role(class="form-select") }}
+                </div>
+
+                <div class="d-flex gap-2">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('admin.list_users') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
